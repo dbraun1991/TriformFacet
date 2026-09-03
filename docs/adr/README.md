@@ -35,3 +35,4 @@ Format: Context / Decision / Consequences. Status is "Accepted" unless noted.
 | [0028](0028-src-and-renders-directories.md) | `src/` and `renders/` directories: scripts and generated PNGs moved out of the repo root |
 | [0029](0029-blueprint-style-variant.md) | Blueprint/technical-drawing style variant (`scene_blueprint.png`), `build_room_and_object` gains `surface_shading` |
 | [0030](0030-celshade-style-variant.md) | Cel/toon-shading style variant (`scene_celshade.png`): low-poly flat-shaded object, black ink outline |
+| [0031](0031-handdrawn-style-variant.md) | Hand-drawn/sketchbook style variant (`scene_handdrawn.png`): seeded sine-wobble line geometry for the room's corner edges |

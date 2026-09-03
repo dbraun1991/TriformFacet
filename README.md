@@ -151,6 +151,7 @@ python3 -m venv .venv
 .venv/bin/python src/render_icon_highres_grayscale.py  # writes renders/highres_grayscale_icon.png — same, 8192px
 .venv/bin/python src/render_scene_blueprint.py      # writes renders/scene_blueprint.png — blueprint style variant
 .venv/bin/python src/render_scene_celshade.py       # writes renders/scene_celshade.png — cel/toon style variant
+.venv/bin/python src/render_scene_handdrawn.py      # writes renders/scene_handdrawn.png — hand-drawn style variant
 ```
 
 Every script resolves `renders/` relative to its own file location (not the
@@ -167,7 +168,7 @@ cwd it's run from), so they can be invoked from anywhere and always land in
   on `sys.path[0]`).
 - `renders/` — every generated PNG (`scene.png`, `icon.png`,
   `highres_icon.png`, `grayscale_icon.png`, `highres_grayscale_icon.png`,
-  `scene_blueprint.png`, `scene_celshade.png`).
+  `scene_blueprint.png`, `scene_celshade.png`, `scene_handdrawn.png`).
   Nothing here is hand-edited; delete and re-run the scripts above to
   regenerate.
 - `docs/adr/` — the ADR log (see below).
@@ -246,6 +247,16 @@ without touching the default look.
   No literal quantized-band toon shader (VTK/PyVista expose none on this
   machine's headless backend) — an approximation using tools already in
   the pipeline. See ADR 0030. Writes `scene_celshade.png`.
+- **`render_scene_handdrawn.py`** — hand-drawn/sketchbook style: warm
+  sepia-on-parchment palette, and genuinely wobbly stroke geometry (not an
+  image-space filter) for the room's three corner edges — each edge
+  subdivided into points displaced by a smooth seeded sine-sum, drawn as
+  2-3 independently-wobbled passes. The wedge cylinder keeps its clean
+  `add_feature_edges()` outline (see ADR 0031's Consequences for why the
+  wobble wasn't extended to it too). See ADR 0031, including a genuine bug
+  (a translucent line lost the depth test against the opaque room quads it
+  sat on and silently failed to render) diagnosed along the way. Writes
+  `scene_handdrawn.png`.
 
 ## Key parameters (`src/render_scene.py`)
 
