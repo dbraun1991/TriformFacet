@@ -75,16 +75,19 @@ ICON_CAMERA_FOCAL_POINT = (4.3872, 4.1316, 3.1687)
 ICON_CAMERA_VIEW_ANGLE = 32
 
 
-def render_icon(size, output_path, light_colors=None):
-    """Render the icon composition at `size`x`size` px to `output_path`,
-    using the camera above. Shared by this file's own default (1024,
-    `icon.png`), `render_icon_highres.py` (8192, `highres_icon.png`), and
-    the grayscale variants (`render_icon_grayscale.py` /
-    `render_icon_highres_grayscale.py`, via `light_colors`) so none of them
-    can drift apart into different compositions.
+def render_icon_from_builder(size, output_path, build_scene_fn):
+    """Render `build_scene_fn(plotter)`'s composition at `size`x`size` px to
+    `output_path`, through the same icon camera as `render_icon()` below —
+    ADR 0022/0023/0024's tuned camera, reused verbatim rather than
+    re-derived, since every style variant shares the same room/object
+    geometry (only palette/lighting/linework differ) and so the same
+    containment/fill guarantees hold. `build_scene_fn` takes just a
+    plotter — used by the three style variants' icon crops
+    (`render_icon_blueprint.py` etc.), whose own `build_scene_<style>()`
+    functions already encapsulate their full styling.
     """
     plotter = pv.Plotter(off_screen=True, window_size=(size, size), lighting="none")
-    build_scene(plotter, light_colors=light_colors)
+    build_scene_fn(plotter)
     plotter.camera.position = ICON_CAMERA_POSITION
     plotter.camera.focal_point = ICON_CAMERA_FOCAL_POINT
     plotter.camera.up = (0, 0, 1)
@@ -93,6 +96,20 @@ def render_icon(size, output_path, light_colors=None):
     print(f"wrote {output_path}")
 
 
+def render_icon(size, output_path, light_colors=None):
+    """Render the default icon composition at `size`x`size` px to
+    `output_path`. Shared by this file's own default (1024,
+    `regular_icon.png`), `render_icon_highres.py` (8192,
+    `highres_icon.png`), and the grayscale variants
+    (`render_icon_grayscale.py` / `render_icon_highres_grayscale.py`, via
+    `light_colors`) so none of them can drift apart into different
+    compositions.
+    """
+    render_icon_from_builder(
+        size, output_path, lambda plotter: build_scene(plotter, light_colors=light_colors),
+    )
+
+
 if __name__ == "__main__":
     RENDERS_DIR.mkdir(parents=True, exist_ok=True)
-    render_icon(ICON_SIZE, RENDERS_DIR / "icon.png")
+    render_icon(ICON_SIZE, RENDERS_DIR / "regular_icon.png")

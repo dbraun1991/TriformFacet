@@ -26,4 +26,4 @@ def render_grayscale_icon(size, output_path):
 
 if __name__ == "__main__":
     RENDERS_DIR.mkdir(parents=True, exist_ok=True)
-    render_grayscale_icon(ICON_SIZE, RENDERS_DIR / "grayscale_icon.png")
+    render_grayscale_icon(ICON_SIZE, RENDERS_DIR / "regular_grayscale_icon.png")

@@ -33,19 +33,27 @@ ruled out so it doesn't get re-tried.
 python3 -m venv .venv          # only if .venv doesn't already exist
 .venv/bin/pip install pyvista
 .venv/bin/python src/render_scene.py               # renders/scene.png — the main illustration
-.venv/bin/python src/render_icon.py                # renders/icon.png — square icon crop
+.venv/bin/python src/render_icon.py                # renders/regular_icon.png — square icon crop
 .venv/bin/python src/render_icon_highres.py        # renders/highres_icon.png — same icon, 8192px (ADR 0025)
-.venv/bin/python src/render_icon_grayscale.py      # renders/grayscale_icon.png — icon, light-only grayscale (ADR 0027)
+.venv/bin/python src/render_icon_grayscale.py      # renders/regular_grayscale_icon.png — icon, light-only grayscale (ADR 0027)
 .venv/bin/python src/render_icon_highres_grayscale.py  # renders/highres_grayscale_icon.png — same, 8192px
 .venv/bin/python src/render_scene_blueprint.py      # renders/scene_blueprint.png — blueprint style variant (ADR 0029)
 .venv/bin/python src/render_scene_celshade.py       # renders/scene_celshade.png — cel/toon style variant (ADR 0030)
 .venv/bin/python src/render_scene_handdrawn.py      # renders/scene_handdrawn.png — hand-drawn style variant (ADR 0031)
+.venv/bin/python src/render_icon_blueprint.py       # renders/regular_blueprint_icon.png — blueprint icon crop (ADR 0032)
+.venv/bin/python src/render_icon_highres_blueprint.py  # renders/highres_blueprint_icon.png — same, 8192px
+.venv/bin/python src/render_icon_celshade.py        # renders/regular_celshade_icon.png — cel/toon icon crop (ADR 0032)
+.venv/bin/python src/render_icon_highres_celshade.py   # renders/highres_celshade_icon.png — same, 8192px
+.venv/bin/python src/render_icon_handdrawn.py       # renders/regular_handdrawn_icon.png — hand-drawn icon crop (ADR 0032)
+.venv/bin/python src/render_icon_highres_handdrawn.py  # renders/highres_handdrawn_icon.png — same, 8192px
 ```
 
-All eight write into `renders/`, resolved relative to each script's own
-file location (not the invoking cwd) — see ADR 0028. Rendering is
-headless/off-screen (VTK's software path) — no display or Xvfb needed or
-available on this machine.
+All fourteen write into `renders/`, resolved relative to each script's own
+file location (not the invoking cwd) — see ADR 0028. Every filename is
+prefixed `regular_`/`highres_`/`scene_` so size and style are
+distinguishable at a glance (ADR 0032). Rendering is headless/off-screen
+(VTK's software path) — no display or Xvfb needed or available on this
+machine.
 
 ## Repo layout
 

@@ -1,7 +1,7 @@
 # TriformFacet
 
 <p align="center">
-  <img src="renders/icon.png" alt="TriformFacet icon: one floating object casting a rectangle, a circle, and a triangle onto the corner of a room" width="360">
+  <img src="renders/regular_icon.png" alt="TriformFacet icon: one floating object casting a rectangle, a circle, and a triangle onto the corner of a room" width="360">
 </p>
 
 A small Python/PyVista renderer that reproduces a remembered scene: the corner
@@ -145,13 +145,19 @@ circle/rectangle/triangle case.
 python3 -m venv .venv
 .venv/bin/pip install pyvista
 .venv/bin/python src/render_scene.py               # writes renders/scene.png — full illustration
-.venv/bin/python src/render_icon.py                # writes renders/icon.png — square icon crop
+.venv/bin/python src/render_icon.py                # writes renders/regular_icon.png — square icon crop
 .venv/bin/python src/render_icon_highres.py        # writes renders/highres_icon.png — same icon, 8192px
-.venv/bin/python src/render_icon_grayscale.py      # writes renders/grayscale_icon.png — icon, light-only grayscale
+.venv/bin/python src/render_icon_grayscale.py      # writes renders/regular_grayscale_icon.png — icon, light-only grayscale
 .venv/bin/python src/render_icon_highres_grayscale.py  # writes renders/highres_grayscale_icon.png — same, 8192px
 .venv/bin/python src/render_scene_blueprint.py      # writes renders/scene_blueprint.png — blueprint style variant
 .venv/bin/python src/render_scene_celshade.py       # writes renders/scene_celshade.png — cel/toon style variant
 .venv/bin/python src/render_scene_handdrawn.py      # writes renders/scene_handdrawn.png — hand-drawn style variant
+.venv/bin/python src/render_icon_blueprint.py       # writes renders/regular_blueprint_icon.png — blueprint icon crop
+.venv/bin/python src/render_icon_highres_blueprint.py  # writes renders/highres_blueprint_icon.png — same, 8192px
+.venv/bin/python src/render_icon_celshade.py        # writes renders/regular_celshade_icon.png — cel/toon icon crop
+.venv/bin/python src/render_icon_highres_celshade.py   # writes renders/highres_celshade_icon.png — same, 8192px
+.venv/bin/python src/render_icon_handdrawn.py       # writes renders/regular_handdrawn_icon.png — hand-drawn icon crop
+.venv/bin/python src/render_icon_highres_handdrawn.py  # writes renders/highres_handdrawn_icon.png — same, 8192px
 ```
 
 Every script resolves `renders/` relative to its own file location (not the
@@ -166,11 +172,16 @@ cwd it's run from), so they can be invoked from anywhere and always land in
   each other directly by module name, which works because they're always
   invoked as `python src/<file>.py` (Python puts the script's own directory
   on `sys.path[0]`).
-- `renders/` — every generated PNG (`scene.png`, `icon.png`,
-  `highres_icon.png`, `grayscale_icon.png`, `highres_grayscale_icon.png`,
-  `scene_blueprint.png`, `scene_celshade.png`, `scene_handdrawn.png`).
-  Nothing here is hand-edited; delete and re-run the scripts above to
-  regenerate.
+- `renders/` — every generated PNG. Named `<regular|highres>_[<style>_]icon.png`
+  for icon crops (style omitted for the default look — ADR 0032) and
+  `scene[_<style>].png` for wide establishing shots: `scene.png`,
+  `regular_icon.png`, `highres_icon.png`, `regular_grayscale_icon.png`,
+  `highres_grayscale_icon.png`, `scene_blueprint.png`,
+  `regular_blueprint_icon.png`, `highres_blueprint_icon.png`,
+  `scene_celshade.png`, `regular_celshade_icon.png`,
+  `highres_celshade_icon.png`, `scene_handdrawn.png`,
+  `regular_handdrawn_icon.png`, `highres_handdrawn_icon.png`. Nothing here
+  is hand-edited; delete and re-run the scripts above to regenerate.
 - `docs/adr/` — the ADR log (see below).
 
 ## Icon
@@ -183,7 +194,7 @@ small background sliver in one or two frame corners. ADR 0017/0018 believed
 this was closed by the first room doubling, but that was eyeballed on a
 thumbnail, not pixel-checked — ADR 0022 measured directly and found a tiny
 sliver was still there at every room size tried. Fixed in ADR 0022 by
-giving `icon.png` its **own camera**, independent of `render_scene.py`'s
+giving the icon its **own camera**, independent of `render_scene.py`'s
 (which stays tuned for the wide `scene.png` establishing shot): a closer
 stop along the same viewing line, picked empirically (render + pixel-scan
 the whole frame for background color, not glance at the corners) to be the
@@ -224,30 +235,35 @@ from amber/blue/rose to light, fully desaturated grays (`#ffffff` /
 lightness instead of hue. Enabled by parameterizing `add_fitted_lights()`'s
 light colors (ADR 0027) rather than forking the scene, so this look can
 never drift out of sync with the colored one on geometry/camera/lighting
-rig. Writes `grayscale_icon.png` / `highres_grayscale_icon.png`.
+rig. Writes `regular_grayscale_icon.png` / `highres_grayscale_icon.png`.
 
 ## Style variants
 
-Alternate rendering styles for the wide `scene.png` shot, built as
-independent scripts sharing the same geometry/camera/shadow-mapping
-pipeline (ADR 0013's pattern of separate, comparable variants rather than
-one direction picked unprompted). Each writes its own `renders/scene_*.png`
-without touching the default look.
+Alternate rendering styles, built as independent scripts sharing the same
+geometry/camera/shadow-mapping pipeline (ADR 0013's pattern of separate,
+comparable variants rather than one direction picked unprompted). Each has
+the full wide-shot + regular-icon + highres-icon set the default look has
+(ADR 0032), written to its own `renders/*_<style>*.png` files without
+touching the default look.
 
-- **`render_scene_blueprint.py`** — blueprint/technical-drawing style:
-  white linework on a flat mid-blue room, one uniform light color instead
-  of three (the shadow shapes are told apart by shape/position alone, not
-  hue or lightness), plus `add_feature_edges()` outlining the wedge
-  cylinder's rim and taper creases. See ADR 0029. Writes
-  `scene_blueprint.png`.
-- **`render_scene_celshade.py`** — cel/toon style: default palette/lights,
-  but the wedge cylinder gets flat (non-smooth) shading at a much lower
-  polygon count so it reads as visibly faceted instead of smoothly
-  gradient-shaded, outlined in bold black ink via `add_feature_edges()`.
-  No literal quantized-band toon shader (VTK/PyVista expose none on this
-  machine's headless backend) — an approximation using tools already in
-  the pipeline. See ADR 0030. Writes `scene_celshade.png`.
-- **`render_scene_handdrawn.py`** — hand-drawn/sketchbook style: warm
+- **Blueprint/technical-drawing** (`render_scene_blueprint.py` /
+  `render_icon_blueprint.py` / `render_icon_highres_blueprint.py`) — white
+  linework on a flat mid-blue room, one uniform light color instead of
+  three (the shadow shapes are told apart by shape/position alone, not hue
+  or lightness), plus `add_feature_edges()` outlining the wedge cylinder's
+  rim and taper creases. See ADR 0029. Writes `scene_blueprint.png` /
+  `regular_blueprint_icon.png` / `highres_blueprint_icon.png`.
+- **Cel/toon** (`render_scene_celshade.py` / `render_icon_celshade.py` /
+  `render_icon_highres_celshade.py`) — default palette/lights, but the
+  wedge cylinder gets flat (non-smooth) shading at a much lower polygon
+  count so it reads as visibly faceted instead of smoothly gradient-shaded,
+  outlined in bold black ink via `add_feature_edges()`. No literal
+  quantized-band toon shader (VTK/PyVista expose none on this machine's
+  headless backend) — an approximation using tools already in the
+  pipeline. See ADR 0030. Writes `scene_celshade.png` /
+  `regular_celshade_icon.png` / `highres_celshade_icon.png`.
+- **Hand-drawn/sketchbook** (`render_scene_handdrawn.py` /
+  `render_icon_handdrawn.py` / `render_icon_highres_handdrawn.py`) — warm
   sepia-on-parchment palette, and genuinely wobbly stroke geometry (not an
   image-space filter) for the room's three corner edges — each edge
   subdivided into points displaced by a smooth seeded sine-sum, drawn as
@@ -256,7 +272,16 @@ without touching the default look.
   wobble wasn't extended to it too). See ADR 0031, including a genuine bug
   (a translucent line lost the depth test against the opaque room quads it
   sat on and silently failed to render) diagnosed along the way. Writes
-  `scene_handdrawn.png`.
+  `scene_handdrawn.png` / `regular_handdrawn_icon.png` /
+  `highres_handdrawn_icon.png`.
+
+Every style's icon crop reuses `render_icon.py`'s tuned camera
+(`ICON_CAMERA_*`, ADR 0022/0023/0024) unchanged via
+`render_icon_from_builder()` — the room/object geometry, which is what
+that camera was actually fit to, is identical across every style variant
+(ADR 0032). Verified, not assumed: each was pixel-scanned for its own
+background color and found zero matching pixels, same containment
+guarantee as the default icon.
 
 ## Key parameters (`src/render_scene.py`)
 
