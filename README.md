@@ -1,5 +1,9 @@
 # TriformFacet
 
+<p align="center">
+  <img src="icon.png" alt="TriformFacet icon: one floating object casting a rectangle, a circle, and a triangle onto the corner of a room" width="360">
+</p>
+
 A small Python/PyVista renderer that reproduces a remembered scene: the corner
 of a room — a floor and two walls, doubling as an unscaled 3D coordinate
 frame — with an object floating in the air above the floor, lit by three
