@@ -150,6 +150,7 @@ python3 -m venv .venv
 .venv/bin/python src/render_icon_grayscale.py      # writes renders/grayscale_icon.png — icon, light-only grayscale
 .venv/bin/python src/render_icon_highres_grayscale.py  # writes renders/highres_grayscale_icon.png — same, 8192px
 .venv/bin/python src/render_scene_blueprint.py      # writes renders/scene_blueprint.png — blueprint style variant
+.venv/bin/python src/render_scene_celshade.py       # writes renders/scene_celshade.png — cel/toon style variant
 ```
 
 Every script resolves `renders/` relative to its own file location (not the
@@ -166,7 +167,7 @@ cwd it's run from), so they can be invoked from anywhere and always land in
   on `sys.path[0]`).
 - `renders/` — every generated PNG (`scene.png`, `icon.png`,
   `highres_icon.png`, `grayscale_icon.png`, `highres_grayscale_icon.png`,
-  `scene_blueprint.png`).
+  `scene_blueprint.png`, `scene_celshade.png`).
   Nothing here is hand-edited; delete and re-run the scripts above to
   regenerate.
 - `docs/adr/` — the ADR log (see below).
@@ -238,6 +239,13 @@ without touching the default look.
   hue or lightness), plus `add_feature_edges()` outlining the wedge
   cylinder's rim and taper creases. See ADR 0029. Writes
   `scene_blueprint.png`.
+- **`render_scene_celshade.py`** — cel/toon style: default palette/lights,
+  but the wedge cylinder gets flat (non-smooth) shading at a much lower
+  polygon count so it reads as visibly faceted instead of smoothly
+  gradient-shaded, outlined in bold black ink via `add_feature_edges()`.
+  No literal quantized-band toon shader (VTK/PyVista expose none on this
+  machine's headless backend) — an approximation using tools already in
+  the pipeline. See ADR 0030. Writes `scene_celshade.png`.
 
 ## Key parameters (`src/render_scene.py`)
 
@@ -250,10 +258,10 @@ without touching the default look.
 | `lights` dict | Three `pv.Light` spotlights, one per surface, each pinned to two of `CYL_CENTER`'s coordinates, pulled back `FAR = 5 * ROOM` along the third, given its own color, and sized via `fit_cone_half_angle()` |
 | `fit_cone_half_angle()` | Computes a light's `cone_angle` so its footprint stays inscribed within its target surface, minus `LIGHT_PADDING` — see "Lighting" above |
 | `LIGHT_PADDING` | Gap kept between each light shape and its nearest white corner line (ADR 0017) |
-| `build_room_and_object(plotter, palette=None, surface_shading=None)` | Adds just the room and object (no lighting) — shared by every render variant. `palette` overrides `DEFAULT_PALETTE`'s colors, `surface_shading` overrides `DEFAULT_SURFACE_SHADING`'s ambient/diffuse/etc. (ADR 0029, used by the blueprint style variant). Returns the four meshes added |
+| `build_room_and_object(plotter, palette=None, surface_shading=None, object_shading=None, cylinder_resolution=96)` | Adds just the room and object (no lighting) — shared by every render variant. `palette` overrides `DEFAULT_PALETTE`'s colors (ADR 0029); `surface_shading`/`object_shading` override `DEFAULT_SURFACE_SHADING`/`DEFAULT_OBJECT_SHADING`'s ambient/diffuse/etc. for the room quads/cylinder respectively; `cylinder_resolution` overrides its polygon count (ADR 0030, used by the cel/toon variant for a visibly faceted low-poly look). Returns the four meshes added |
 | `add_fitted_lights(plotter)` | The inscribed-circle lighting + shadows — the scene's one lighting rig |
 | `add_edge_highlight_lines(plotter)` | Unlit corner-edge lines — see "Current scene" → Corner edges above |
-| `add_feature_edges(plotter, meshes)` | Unlit boundary/crease-edge wireframe over given meshes (ADR 0029) — the blueprint variant's linework |
+| `add_feature_edges(plotter, meshes, feature_angle=30.0)` | Unlit boundary/crease-edge wireframe over given meshes (ADR 0029) — the blueprint variant's linework. `feature_angle` lowers the dihedral-angle threshold for what counts as an edge (ADR 0030, needed for a low-poly mesh's shallower facet angles) |
 | `build_scene(plotter, light_colors=None)` | `build_room_and_object` + `add_fitted_lights` + `add_edge_highlight_lines` — the scene, used by `render_scene.py` and `render_icon.py`. `light_colors` overrides `DEFAULT_LIGHT_COLORS` (ADR 0027, used by the grayscale icon variant) |
 
 ## Known issues

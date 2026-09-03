@@ -38,12 +38,13 @@ python3 -m venv .venv          # only if .venv doesn't already exist
 .venv/bin/python src/render_icon_grayscale.py      # renders/grayscale_icon.png — icon, light-only grayscale (ADR 0027)
 .venv/bin/python src/render_icon_highres_grayscale.py  # renders/highres_grayscale_icon.png — same, 8192px
 .venv/bin/python src/render_scene_blueprint.py      # renders/scene_blueprint.png — blueprint style variant (ADR 0029)
+.venv/bin/python src/render_scene_celshade.py       # renders/scene_celshade.png — cel/toon style variant (ADR 0030)
 ```
 
-All six write into `renders/`, resolved relative to each script's own file
-location (not the invoking cwd) — see ADR 0028. Rendering is headless/
-off-screen (VTK's software path) — no display or Xvfb needed or available
-on this machine.
+All seven write into `renders/`, resolved relative to each script's own
+file location (not the invoking cwd) — see ADR 0028. Rendering is
+headless/off-screen (VTK's software path) — no display or Xvfb needed or
+available on this machine.
 
 ## Repo layout
 
@@ -87,10 +88,10 @@ mainly in recording *dead ends*, not just what shipped.
 
 Only genuinely open items — resolved history lives in `docs/adr/`, not here.
 
-- Alternate, sketchier rendering styles for this scene — cel/toon shading,
-  hand-drawn — still not started (blueprint/technical-drawing shipped, ADR
-  0029). Same pattern as before: side-by-side variants to compare, not one
-  direction picked unprompted (ADR 0013's precedent).
+- One alternate rendering style for this scene still not started:
+  hand-drawn (blueprint/technical-drawing and cel/toon shipped, ADR
+  0029/0030). Same pattern as before: a side-by-side variant to compare,
+  not swapped in for the default (ADR 0013's precedent).
 - Port the scene to three.js for interactive/in-browser viewing (orbit the
   camera, etc.), instead of PyVista's static offline renders. Not started,
   no timeline — a someday idea, not queued work. Would mean re-deriving

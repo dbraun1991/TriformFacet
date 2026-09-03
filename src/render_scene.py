@@ -168,9 +168,16 @@ DEFAULT_PALETTE = {
 
 
 DEFAULT_SURFACE_SHADING = dict(smooth_shading=True, specular=0.05, ambient=0.12, diffuse=0.9)
+DEFAULT_OBJECT_SHADING = dict(
+    smooth_shading=True, specular=0.4, specular_power=20, diffuse=0.85, ambient=0.12,
+)
+DEFAULT_CYLINDER_RESOLUTION = 96
 
 
-def build_room_and_object(plotter, palette=None, surface_shading=None):
+def build_room_and_object(
+    plotter, palette=None, surface_shading=None, object_shading=None,
+    cylinder_resolution=DEFAULT_CYLINDER_RESOLUTION,
+):
     """Add the room (floor + two walls) and the floating wedge cylinder to
     `plotter` — everything about the scene except lighting, which is
     `add_fitted_lights`'s own concern. Shared by every render variant
@@ -184,13 +191,20 @@ def build_room_and_object(plotter, palette=None, surface_shading=None):
     quads — the default's low `ambient` (0.12) reads fine against the
     default's light neutral palette, but crushes a dark blueprint palette's
     unlit areas to near-black; the blueprint variant raises `ambient` to
-    keep them a visible flat blue instead. Geometry stays identical either
-    way. Returns the four meshes added (`floor`/`wall_back`/`wall_side`/
-    `cylinder`) so a caller can post-process them (e.g. extracting
-    feature-edge wireframes).
+    keep them a visible flat blue instead. `object_shading` is the same
+    idea for the wedge cylinder (overrides `DEFAULT_OBJECT_SHADING`) —
+    e.g. the cel/toon variant disables `smooth_shading` for flat per-facet
+    shading instead of a continuous gradient. `cylinder_resolution`
+    overrides the cylinder's side count (same idea again — a low-poly
+    cylinder makes flat per-facet shading visually read as *faceted*
+    rather than just "not glossy"). Geometry otherwise stays identical
+    either way. Returns the four meshes added (`floor`/`wall_back`/
+    `wall_side`/`cylinder`) so a caller can post-process them (e.g.
+    extracting feature-edge wireframes).
     """
     palette = {**DEFAULT_PALETTE, **(palette or {})}
     surface_shading = {**DEFAULT_SURFACE_SHADING, **(surface_shading or {})}
+    object_shading = {**DEFAULT_OBJECT_SHADING, **(object_shading or {})}
     plotter.set_background(palette["background"])
     plotter.enable_anti_aliasing("ssaa")
 
@@ -206,18 +220,14 @@ def build_room_and_object(plotter, palette=None, surface_shading=None):
 
     # --- the floating wedge cylinder: full circle facing the camera (large
     # x, nearest the viewer), tapering to a thin line at the small-x end ---
-    cylinder = make_wedge_cylinder(CYL_RADIUS, CYL_LENGTH, full_end="max")
+    cylinder = make_wedge_cylinder(CYL_RADIUS, CYL_LENGTH, resolution=cylinder_resolution, full_end="max")
     cylinder.translate(CYL_CENTER, inplace=True)
     plotter.add_mesh(
         cylinder,
         color=palette["object"],  # near-white by default — reflects the
         # projected light colors rather than competing with them with its
         # own hue
-        smooth_shading=True,
-        specular=0.4,
-        specular_power=20,
-        diffuse=0.85,
-        ambient=0.12,
+        **object_shading,
     )
 
     return {"floor": floor, "wall_back": wall_back, "wall_side": wall_side, "cylinder": cylinder}
@@ -250,7 +260,7 @@ def add_edge_highlight_lines(plotter, color="#ffffff", line_width=3.0):
         )
 
 
-def add_feature_edges(plotter, meshes, color="#ffffff", line_width=1.5):
+def add_feature_edges(plotter, meshes, color="#ffffff", line_width=1.5, feature_angle=30.0):
     """Draw each mesh's boundary + sharp-crease edges (via
     `extract_feature_edges()`) as bright, unlit lines on top of it — the
     linework signature of a technical-drawing/blueprint look, layered over
@@ -261,10 +271,16 @@ def add_feature_edges(plotter, meshes, color="#ffffff", line_width=1.5):
     `make_wedge_cylinder` already split normals across for ADR 0006).
 
     `meshes` is any iterable of PyVista meshes — typically the dict
-    `build_room_and_object()` returns.
+    `build_room_and_object()` returns. `feature_angle` is the minimum
+    dihedral angle (degrees) between two faces for VTK to count their
+    shared edge as a "feature" — PyVista's own default (30°). A low-poly
+    mesh (e.g. the cel/toon variant's low-resolution cylinder) can have
+    facet-to-facet angles *below* the default and need it lowered to pick
+    up every facet edge.
     """
     for mesh in (meshes.values() if isinstance(meshes, dict) else meshes):
         edges = mesh.extract_feature_edges(
+            feature_angle=feature_angle,
             boundary_edges=True, feature_edges=True, manifold_edges=False,
             non_manifold_edges=False,
         )
