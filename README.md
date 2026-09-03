@@ -149,6 +149,7 @@ python3 -m venv .venv
 .venv/bin/python src/render_icon_highres.py        # writes renders/highres_icon.png — same icon, 8192px
 .venv/bin/python src/render_icon_grayscale.py      # writes renders/grayscale_icon.png — icon, light-only grayscale
 .venv/bin/python src/render_icon_highres_grayscale.py  # writes renders/highres_grayscale_icon.png — same, 8192px
+.venv/bin/python src/render_scene_blueprint.py      # writes renders/scene_blueprint.png — blueprint style variant
 ```
 
 Every script resolves `renders/` relative to its own file location (not the
@@ -164,7 +165,8 @@ cwd it's run from), so they can be invoked from anywhere and always land in
   invoked as `python src/<file>.py` (Python puts the script's own directory
   on `sys.path[0]`).
 - `renders/` — every generated PNG (`scene.png`, `icon.png`,
-  `highres_icon.png`, `grayscale_icon.png`, `highres_grayscale_icon.png`).
+  `highres_icon.png`, `grayscale_icon.png`, `highres_grayscale_icon.png`,
+  `scene_blueprint.png`).
   Nothing here is hand-edited; delete and re-run the scripts above to
   regenerate.
 - `docs/adr/` — the ADR log (see below).
@@ -222,6 +224,21 @@ light colors (ADR 0027) rather than forking the scene, so this look can
 never drift out of sync with the colored one on geometry/camera/lighting
 rig. Writes `grayscale_icon.png` / `highres_grayscale_icon.png`.
 
+## Style variants
+
+Alternate rendering styles for the wide `scene.png` shot, built as
+independent scripts sharing the same geometry/camera/shadow-mapping
+pipeline (ADR 0013's pattern of separate, comparable variants rather than
+one direction picked unprompted). Each writes its own `renders/scene_*.png`
+without touching the default look.
+
+- **`render_scene_blueprint.py`** — blueprint/technical-drawing style:
+  white linework on a flat mid-blue room, one uniform light color instead
+  of three (the shadow shapes are told apart by shape/position alone, not
+  hue or lightness), plus `add_feature_edges()` outlining the wedge
+  cylinder's rim and taper creases. See ADR 0029. Writes
+  `scene_blueprint.png`.
+
 ## Key parameters (`src/render_scene.py`)
 
 | Name | Meaning |
@@ -233,9 +250,10 @@ rig. Writes `grayscale_icon.png` / `highres_grayscale_icon.png`.
 | `lights` dict | Three `pv.Light` spotlights, one per surface, each pinned to two of `CYL_CENTER`'s coordinates, pulled back `FAR = 5 * ROOM` along the third, given its own color, and sized via `fit_cone_half_angle()` |
 | `fit_cone_half_angle()` | Computes a light's `cone_angle` so its footprint stays inscribed within its target surface, minus `LIGHT_PADDING` — see "Lighting" above |
 | `LIGHT_PADDING` | Gap kept between each light shape and its nearest white corner line (ADR 0017) |
-| `build_room_and_object(plotter)` | Adds just the room and object (no lighting) — shared by every render variant |
+| `build_room_and_object(plotter, palette=None, surface_shading=None)` | Adds just the room and object (no lighting) — shared by every render variant. `palette` overrides `DEFAULT_PALETTE`'s colors, `surface_shading` overrides `DEFAULT_SURFACE_SHADING`'s ambient/diffuse/etc. (ADR 0029, used by the blueprint style variant). Returns the four meshes added |
 | `add_fitted_lights(plotter)` | The inscribed-circle lighting + shadows — the scene's one lighting rig |
 | `add_edge_highlight_lines(plotter)` | Unlit corner-edge lines — see "Current scene" → Corner edges above |
+| `add_feature_edges(plotter, meshes)` | Unlit boundary/crease-edge wireframe over given meshes (ADR 0029) — the blueprint variant's linework |
 | `build_scene(plotter, light_colors=None)` | `build_room_and_object` + `add_fitted_lights` + `add_edge_highlight_lines` — the scene, used by `render_scene.py` and `render_icon.py`. `light_colors` overrides `DEFAULT_LIGHT_COLORS` (ADR 0027, used by the grayscale icon variant) |
 
 ## Known issues

@@ -78,6 +78,18 @@ CYL_CENTER = (_M, _M, _M)
 # all the way to the line the way ADR 0009's original tangent circles did.
 LIGHT_PADDING = 0.5
 
+# The wide establishing-shot camera (standing inside the room, looking into
+# the corner). Position/focal_point are expressed as a fixed fraction of
+# ROOM/HEIGHT (ADR 0020/0021 — see the __main__ comment below for why).
+# Exposed as module-level constants, not just inlined in __main__, so
+# alternate-style variants (e.g. render_scene_blueprint.py) can reuse the
+# exact same camera instead of duplicating these numbers — the same reason
+# render_icon.py exposes ICON_CAMERA_*.
+SCENE_CAMERA_POSITION = (53.6, 51.2, 32.4)
+SCENE_CAMERA_FOCAL_POINT = (7.6, 10.4, 6.4)
+SCENE_CAMERA_UP = (0, 0, 1)
+SCENE_CAMERA_VIEW_ANGLE = 32
+
 
 def fit_cone_half_angle(distance, center_a, extent_a, center_b, extent_b, padding=0.0):
     """Half-angle (degrees) for a spotlight's circular footprint to land
@@ -146,14 +158,40 @@ def make_wedge_cylinder(radius, length, resolution=96, full_end="max"):
     return wedge
 
 
-def build_room_and_object(plotter):
+DEFAULT_PALETTE = {
+    "background": "#eef1f5",
+    "floor": "#d9d4c6",
+    "wall_back": "#e6e2d6",
+    "wall_side": "#cec9ba",
+    "object": "#f2f0ea",
+}
+
+
+DEFAULT_SURFACE_SHADING = dict(smooth_shading=True, specular=0.05, ambient=0.12, diffuse=0.9)
+
+
+def build_room_and_object(plotter, palette=None, surface_shading=None):
     """Add the room (floor + two walls) and the floating wedge cylinder to
     `plotter` — everything about the scene except lighting, which is
     `add_fitted_lights`'s own concern. Shared by every render variant
     (`render_scene.py`, `render_icon.py`, `render_icon_highres.py`) so the
     room/object geometry can't drift out of sync between them.
+
+    `palette` optionally overrides `DEFAULT_PALETTE`'s background/surface/
+    object colors per-key (e.g. the blueprint style variant swaps in its
+    ink-on-blue palette). `surface_shading` optionally overrides
+    `DEFAULT_SURFACE_SHADING`'s `ambient`/`diffuse`/etc. for the three room
+    quads — the default's low `ambient` (0.12) reads fine against the
+    default's light neutral palette, but crushes a dark blueprint palette's
+    unlit areas to near-black; the blueprint variant raises `ambient` to
+    keep them a visible flat blue instead. Geometry stays identical either
+    way. Returns the four meshes added (`floor`/`wall_back`/`wall_side`/
+    `cylinder`) so a caller can post-process them (e.g. extracting
+    feature-edge wireframes).
     """
-    plotter.set_background("#eef1f5")
+    palette = {**DEFAULT_PALETTE, **(palette or {})}
+    surface_shading = {**DEFAULT_SURFACE_SHADING, **(surface_shading or {})}
+    plotter.set_background(palette["background"])
     plotter.enable_anti_aliasing("ssaa")
 
     # --- room: floor (x-y) and two walls (x-z at y=0, y-z at x=0), sharing
@@ -162,10 +200,9 @@ def build_room_and_object(plotter):
     wall_back = quad((0, 0, 0), (ROOM, 0, 0), (ROOM, 0, HEIGHT), (0, 0, HEIGHT))  # y=0
     wall_side = quad((0, 0, 0), (0, ROOM, 0), (0, ROOM, HEIGHT), (0, 0, HEIGHT))  # x=0
 
-    surface_kwargs = dict(smooth_shading=True, specular=0.05, ambient=0.12, diffuse=0.9)
-    plotter.add_mesh(floor, color="#d9d4c6", **surface_kwargs)
-    plotter.add_mesh(wall_back, color="#e6e2d6", **surface_kwargs)
-    plotter.add_mesh(wall_side, color="#cec9ba", **surface_kwargs)
+    plotter.add_mesh(floor, color=palette["floor"], **surface_shading)
+    plotter.add_mesh(wall_back, color=palette["wall_back"], **surface_shading)
+    plotter.add_mesh(wall_side, color=palette["wall_side"], **surface_shading)
 
     # --- the floating wedge cylinder: full circle facing the camera (large
     # x, nearest the viewer), tapering to a thin line at the small-x end ---
@@ -173,14 +210,17 @@ def build_room_and_object(plotter):
     cylinder.translate(CYL_CENTER, inplace=True)
     plotter.add_mesh(
         cylinder,
-        color="#f2f0ea",  # light gray, near-white — reflects the projected
-        # light colors rather than competing with them with its own hue
+        color=palette["object"],  # near-white by default — reflects the
+        # projected light colors rather than competing with them with its
+        # own hue
         smooth_shading=True,
         specular=0.4,
         specular_power=20,
         diffuse=0.85,
         ambient=0.12,
     )
+
+    return {"floor": floor, "wall_back": wall_back, "wall_side": wall_side, "cylinder": cylinder}
 
 
 def add_edge_highlight_lines(plotter, color="#ffffff", line_width=3.0):
@@ -206,6 +246,30 @@ def add_edge_highlight_lines(plotter, color="#ffffff", line_width=3.0):
             color=color,
             line_width=line_width,
             lighting=False,
+            render_lines_as_tubes=True,
+        )
+
+
+def add_feature_edges(plotter, meshes, color="#ffffff", line_width=1.5):
+    """Draw each mesh's boundary + sharp-crease edges (via
+    `extract_feature_edges()`) as bright, unlit lines on top of it — the
+    linework signature of a technical-drawing/blueprint look, layered over
+    normal shading rather than replacing it (same unlit-overlay cheat as
+    `add_edge_highlight_lines`, ADR 0013/0015). Room quads contribute just
+    their four boundary edges; the wedge cylinder also picks up its
+    circular rim and the two taper creases (the same creases
+    `make_wedge_cylinder` already split normals across for ADR 0006).
+
+    `meshes` is any iterable of PyVista meshes — typically the dict
+    `build_room_and_object()` returns.
+    """
+    for mesh in (meshes.values() if isinstance(meshes, dict) else meshes):
+        edges = mesh.extract_feature_edges(
+            boundary_edges=True, feature_edges=True, manifold_edges=False,
+            non_manifold_edges=False,
+        )
+        plotter.add_mesh(
+            edges, color=color, line_width=line_width, lighting=False,
             render_lines_as_tubes=True,
         )
 
@@ -340,10 +404,10 @@ if __name__ == "__main__":
     # camera was tested and rejected (ADR 0020): it crops the light circles
     # at icon.png's frame edges (reopening ADR 0011/0014), since the camera
     # would then be relatively too close to the now-bigger room.
-    plotter.camera.position = (53.6, 51.2, 32.4)
-    plotter.camera.focal_point = (7.6, 10.4, 6.4)
-    plotter.camera.up = (0, 0, 1)
-    plotter.camera.view_angle = 32
+    plotter.camera.position = SCENE_CAMERA_POSITION
+    plotter.camera.focal_point = SCENE_CAMERA_FOCAL_POINT
+    plotter.camera.up = SCENE_CAMERA_UP
+    plotter.camera.view_angle = SCENE_CAMERA_VIEW_ANGLE
 
     RENDERS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = RENDERS_DIR / "scene.png"

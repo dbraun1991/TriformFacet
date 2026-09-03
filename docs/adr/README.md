@@ -33,3 +33,4 @@ Format: Context / Decision / Consequences. Status is "Accepted" unless noted.
 | [0026](0026-remove-pixelperfect-variant.md) | Removed the pixel-perfect variant (`render_scene_pixelperfect.py`); circles are now the only look — ADR 0019 closed as moot, not resolved |
 | [0027](0027-grayscale-icon-variant.md) | Grayscale icon variant (`grayscale_icon.png`), light colors parameterized on the shared rig |
 | [0028](0028-src-and-renders-directories.md) | `src/` and `renders/` directories: scripts and generated PNGs moved out of the repo root |
+| [0029](0029-blueprint-style-variant.md) | Blueprint/technical-drawing style variant (`scene_blueprint.png`), `build_room_and_object` gains `surface_shading` |
