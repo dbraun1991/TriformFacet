@@ -75,14 +75,16 @@ ICON_CAMERA_FOCAL_POINT = (4.3872, 4.1316, 3.1687)
 ICON_CAMERA_VIEW_ANGLE = 32
 
 
-def render_icon(size, output_path):
+def render_icon(size, output_path, light_colors=None):
     """Render the icon composition at `size`x`size` px to `output_path`,
     using the camera above. Shared by this file's own default (1024,
-    `icon.png`) and `render_icon_highres.py` (8192, `highres_icon.png`) so
-    the two outputs can't drift apart into two different compositions.
+    `icon.png`), `render_icon_highres.py` (8192, `highres_icon.png`), and
+    the grayscale variants (`render_icon_grayscale.py` /
+    `render_icon_highres_grayscale.py`, via `light_colors`) so none of them
+    can drift apart into different compositions.
     """
     plotter = pv.Plotter(off_screen=True, window_size=(size, size), lighting="none")
-    build_scene(plotter)
+    build_scene(plotter, light_colors=light_colors)
     plotter.camera.position = ICON_CAMERA_POSITION
     plotter.camera.focal_point = ICON_CAMERA_FOCAL_POINT
     plotter.camera.up = (0, 0, 1)

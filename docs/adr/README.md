@@ -31,4 +31,5 @@ Format: Context / Decision / Consequences. Status is "Accepted" unless noted.
 | [0024](0024-icon-camera-centered-padding.md) | Icon camera centered (pan solved via Newton iteration) so left=right and top=bottom padding |
 | [0025](0025-highres-icon-no-svg.md) | `highres_icon.png` (8192px, measured ceiling) added; vector `icon.svg` tested and rejected |
 | [0026](0026-remove-pixelperfect-variant.md) | Removed the pixel-perfect variant (`render_scene_pixelperfect.py`); circles are now the only look — ADR 0019 closed as moot, not resolved |
+| [0027](0027-grayscale-icon-variant.md) | Grayscale icon variant (`grayscale_icon.png`), light colors parameterized on the shared rig |
 | [0028](0028-src-and-renders-directories.md) | `src/` and `renders/` directories: scripts and generated PNGs moved out of the repo root |

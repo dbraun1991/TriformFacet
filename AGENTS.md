@@ -35,10 +35,12 @@ python3 -m venv .venv          # only if .venv doesn't already exist
 .venv/bin/python src/render_scene.py               # renders/scene.png — the main illustration
 .venv/bin/python src/render_icon.py                # renders/icon.png — square icon crop
 .venv/bin/python src/render_icon_highres.py        # renders/highres_icon.png — same icon, 8192px (ADR 0025)
+.venv/bin/python src/render_icon_grayscale.py      # renders/grayscale_icon.png — icon, light-only grayscale (ADR 0027)
+.venv/bin/python src/render_icon_highres_grayscale.py  # renders/highres_grayscale_icon.png — same, 8192px
 ```
 
-All three write into `renders/`, resolved relative to each script's own
-file location (not the invoking cwd) — see ADR 0028. Rendering is headless/
+All five write into `renders/`, resolved relative to each script's own file
+location (not the invoking cwd) — see ADR 0028. Rendering is headless/
 off-screen (VTK's software path) — no display or Xvfb needed or available
 on this machine.
 

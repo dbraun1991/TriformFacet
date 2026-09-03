@@ -147,6 +147,8 @@ python3 -m venv .venv
 .venv/bin/python src/render_scene.py               # writes renders/scene.png — full illustration
 .venv/bin/python src/render_icon.py                # writes renders/icon.png — square icon crop
 .venv/bin/python src/render_icon_highres.py        # writes renders/highres_icon.png — same icon, 8192px
+.venv/bin/python src/render_icon_grayscale.py      # writes renders/grayscale_icon.png — icon, light-only grayscale
+.venv/bin/python src/render_icon_highres_grayscale.py  # writes renders/highres_grayscale_icon.png — same, 8192px
 ```
 
 Every script resolves `renders/` relative to its own file location (not the
@@ -162,8 +164,9 @@ cwd it's run from), so they can be invoked from anywhere and always land in
   invoked as `python src/<file>.py` (Python puts the script's own directory
   on `sys.path[0]`).
 - `renders/` — every generated PNG (`scene.png`, `icon.png`,
-  `highres_icon.png`). Nothing here is hand-edited; delete and re-run the
-  scripts above to regenerate.
+  `highres_icon.png`, `grayscale_icon.png`, `highres_grayscale_icon.png`).
+  Nothing here is hand-edited; delete and re-run the scripts above to
+  regenerate.
 - `docs/adr/` — the ADR log (see below).
 
 ## Icon
@@ -210,6 +213,15 @@ either way (verified byte-identical output with and without the "true
 vector" flag); this scene's shadow-mapped shading has no vector
 representation to export in the first place.
 
+`render_icon_grayscale.py` / `render_icon_highres_grayscale.py` render the
+same composition and camera again, but with the three spotlights swapped
+from amber/blue/rose to light, fully desaturated grays (`#ffffff` /
+`#d9d9d9` / `#b3b3b3`) — the three shadow shapes are told apart by
+lightness instead of hue. Enabled by parameterizing `add_fitted_lights()`'s
+light colors (ADR 0027) rather than forking the scene, so this look can
+never drift out of sync with the colored one on geometry/camera/lighting
+rig. Writes `grayscale_icon.png` / `highres_grayscale_icon.png`.
+
 ## Key parameters (`src/render_scene.py`)
 
 | Name | Meaning |
@@ -224,7 +236,7 @@ representation to export in the first place.
 | `build_room_and_object(plotter)` | Adds just the room and object (no lighting) — shared by every render variant |
 | `add_fitted_lights(plotter)` | The inscribed-circle lighting + shadows — the scene's one lighting rig |
 | `add_edge_highlight_lines(plotter)` | Unlit corner-edge lines — see "Current scene" → Corner edges above |
-| `build_scene(plotter)` | `build_room_and_object` + `add_fitted_lights` + `add_edge_highlight_lines` — the scene, used by `render_scene.py` and `render_icon.py` |
+| `build_scene(plotter, light_colors=None)` | `build_room_and_object` + `add_fitted_lights` + `add_edge_highlight_lines` — the scene, used by `render_scene.py` and `render_icon.py`. `light_colors` overrides `DEFAULT_LIGHT_COLORS` (ADR 0027, used by the grayscale icon variant) |
 
 ## Known issues
 

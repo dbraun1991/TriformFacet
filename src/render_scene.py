@@ -210,11 +210,24 @@ def add_edge_highlight_lines(plotter, color="#ffffff", line_width=3.0):
         )
 
 
-def add_fitted_lights(plotter):
+DEFAULT_LIGHT_COLORS = {
+    "floor": "#ffb54d",      # amber
+    "wall_back": "#5b9bd5",  # blue
+    "wall_side": "#e8637f",  # rose
+}
+
+
+def add_fitted_lights(plotter, colors=None):
     """Add the three inscribed-footprint spotlights (see
     `fit_cone_half_angle`) and enable shadow mapping — the scene's one
     lighting rig, used by every render variant.
+
+    `colors` optionally overrides `DEFAULT_LIGHT_COLORS` per-surface (e.g.
+    the grayscale icon variant swaps in light, fully desaturated colors so
+    the three shadows read by lightness instead of hue) — geometry, cone
+    angles, and everything else about the rig stays identical.
     """
+    colors = {**DEFAULT_LIGHT_COLORS, **(colors or {})}
     # --- three spotlights, each aimed straight down one axis at the
     # cylinder ---
     # Each light shares two of the cylinder center's three coordinates
@@ -247,7 +260,7 @@ def add_fitted_lights(plotter):
         "floor": pv.Light(  # varies z only — straight down onto the floor
             position=(CYL_CENTER[0], CYL_CENTER[1], far),
             focal_point=CYL_CENTER,
-            color="#ffb54d",  # amber
+            color=colors["floor"],
             intensity=0.85,
             cone_angle=fit_cone_half_angle(
                 far, CYL_CENTER[0], ROOM, CYL_CENTER[1], ROOM, padding=LIGHT_PADDING
@@ -256,7 +269,7 @@ def add_fitted_lights(plotter):
         "wall_back": pv.Light(  # varies y only — straight at the back wall (y=0)
             position=(CYL_CENTER[0], far, CYL_CENTER[2]),
             focal_point=CYL_CENTER,
-            color="#5b9bd5",  # blue
+            color=colors["wall_back"],
             intensity=0.85,
             cone_angle=fit_cone_half_angle(
                 far, CYL_CENTER[0], ROOM, CYL_CENTER[2], HEIGHT, padding=LIGHT_PADDING
@@ -265,7 +278,7 @@ def add_fitted_lights(plotter):
         "wall_side": pv.Light(  # varies x only — straight at the side wall (x=0)
             position=(far, CYL_CENTER[1], CYL_CENTER[2]),
             focal_point=CYL_CENTER,
-            color="#e8637f",  # rose
+            color=colors["wall_side"],
             intensity=0.85,
             cone_angle=fit_cone_half_angle(
                 far, CYL_CENTER[1], ROOM, CYL_CENTER[2], HEIGHT, padding=LIGHT_PADDING
@@ -282,7 +295,7 @@ def add_fitted_lights(plotter):
     plotter.enable_shadows()
 
 
-def build_scene(plotter):
+def build_scene(plotter, light_colors=None):
     """`build_room_and_object()` + `add_fitted_lights()` + the unlit
     corner-edge lines (`add_edge_highlight_lines()`) — the scene, used by
     `render_scene.py` (this file's own `__main__`) and by `render_icon.py`.
@@ -293,9 +306,11 @@ def build_scene(plotter):
     The edge-lines look was preferred and promoted to the default here (ADR
     0015); the pixel-perfect variant was later removed outright (ADR 0026)
     rather than kept as an unused alternate.
+
+    `light_colors` passes through to `add_fitted_lights` unchanged.
     """
     build_room_and_object(plotter)
-    add_fitted_lights(plotter)
+    add_fitted_lights(plotter, colors=light_colors)
     add_edge_highlight_lines(plotter)
 
 
