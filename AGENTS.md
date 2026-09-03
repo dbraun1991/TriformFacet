@@ -86,18 +86,6 @@ mainly in recording *dead ends*, not just what shipped.
 
 Only genuinely open items — resolved history lives in `docs/adr/`, not here.
 
-- `icon.png` hasn't been added to any actual webpage yet, and isn't legible
-  below ~64px (true favicon sizes, 32px/16px, collapse into color blobs).
-  A true 16px mark would need a separately-designed, simplified graphic —
-  flat color blocks, no gradient/shadow detail — not a downscale of this
-  render. See ADR 0011.
-- Camera framing for `render_scene.py` (`position`/`focal_point`/
-  `view_angle`) is open for a further deliberate pass — ADR 0020 confirmed
-  *what's currently there* is correct (proportional to `ROOM`/`HEIGHT`, not
-  a stale leftover), not that the composition itself is finished;
-  `render_icon.py` already got its own closer, independently-tuned camera
-  in ADR 0022, and the same "circles feel small" feedback that prompted
-  that applies to this wide shot too, unaddressed so far.
 - Alternate, sketchier rendering styles for this scene — blueprint/
   technical-drawing, cel/toon shading, hand-drawn — explicitly deferred,
   not started. When picked back up, expect multiple side-by-side style
