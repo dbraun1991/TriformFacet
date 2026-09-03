@@ -91,3 +91,9 @@ Only genuinely open items — resolved history lives in `docs/adr/`, not here.
   not started. When picked back up, expect multiple side-by-side style
   variants to compare rather than one direction picked unprompted (the
   pattern used for the corner-visibility exploration, ADR 0013).
+- Port the scene to three.js for interactive/in-browser viewing (orbit the
+  camera, etc.), instead of PyVista's static offline renders. Not started,
+  no timeline — a someday idea, not queued work. Would mean re-deriving
+  this scene's geometry/lighting/shadow setup in a different engine from
+  scratch (three.js is not a PyVista/VTK target), not a port of the
+  existing Python code.
