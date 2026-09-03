@@ -25,7 +25,9 @@ way to get a higher-fidelity version of this particular render.
 """
 
 from render_icon import render_icon
+from render_scene import RENDERS_DIR
 
 HIGHRES_SIZE = 8192
 
-render_icon(HIGHRES_SIZE, "highres_icon.png")
+RENDERS_DIR.mkdir(parents=True, exist_ok=True)
+render_icon(HIGHRES_SIZE, RENDERS_DIR / "highres_icon.png")

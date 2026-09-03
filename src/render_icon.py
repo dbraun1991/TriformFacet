@@ -23,7 +23,7 @@ Fixed by giving the icon its own, much closer camera instead of reusing
 
 import pyvista as pv
 
-from render_scene import build_scene
+from render_scene import RENDERS_DIR, build_scene
 
 ICON_SIZE = 1024
 
@@ -87,9 +87,10 @@ def render_icon(size, output_path):
     plotter.camera.focal_point = ICON_CAMERA_FOCAL_POINT
     plotter.camera.up = (0, 0, 1)
     plotter.camera.view_angle = ICON_CAMERA_VIEW_ANGLE
-    plotter.screenshot(output_path)
+    plotter.screenshot(str(output_path))
     print(f"wrote {output_path}")
 
 
 if __name__ == "__main__":
-    render_icon(ICON_SIZE, "icon.png")
+    RENDERS_DIR.mkdir(parents=True, exist_ok=True)
+    render_icon(ICON_SIZE, RENDERS_DIR / "icon.png")

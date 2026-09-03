@@ -32,22 +32,36 @@ ruled out so it doesn't get re-tried.
 ```bash
 python3 -m venv .venv          # only if .venv doesn't already exist
 .venv/bin/pip install pyvista
-.venv/bin/python render_scene.py               # scene.png — the main illustration
-.venv/bin/python render_icon.py                # icon.png — square icon crop
-.venv/bin/python render_icon_highres.py        # highres_icon.png — same icon, 8192px (ADR 0025)
+.venv/bin/python src/render_scene.py               # renders/scene.png — the main illustration
+.venv/bin/python src/render_icon.py                # renders/icon.png — square icon crop
+.venv/bin/python src/render_icon_highres.py        # renders/highres_icon.png — same icon, 8192px (ADR 0025)
 ```
 
-All three write to the repo root. Rendering is headless/off-screen (VTK's
-software path) — no display or Xvfb needed or available on this machine.
+All three write into `renders/`, resolved relative to each script's own
+file location (not the invoking cwd) — see ADR 0028. Rendering is headless/
+off-screen (VTK's software path) — no display or Xvfb needed or available
+on this machine.
 
-## Working on `render_scene.py`
+## Repo layout
+
+- `src/` — every `render_*.py` script, flat (ADR 0003 kept this a single
+  static illustration, not a package). They import each other by bare
+  module name (e.g. `from render_scene import build_scene`), which only
+  resolves correctly when run as `python src/<file>.py` — running a script
+  from inside `src/` or importing one from elsewhere requires `src/` on
+  `sys.path` some other way.
+- `renders/` — every generated PNG. Fully derived; never hand-edit, just
+  re-run the relevant script.
+- `docs/adr/` — the ADR log referenced throughout this file.
+
+## Working on `src/render_scene.py`
 
 - All scene parameters (room size, object size/position, camera, lights)
   are plain module-level constants near the top of the file — edit them
   directly, there's no config/CLI layer (see ADR 0003).
 - After any geometry or lighting change, re-render and actually look at
-  `scene.png` before calling it done — this is a visual illustration; a
-  clean diff is not sufficient evidence it looks right.
+  `renders/scene.png` before calling it done — this is a visual
+  illustration; a clean diff is not sufficient evidence it looks right.
 - If a change produces a lighting/shadow artifact, check `docs/adr/` first
   — several look-alike issues (grazing-angle acne vs. distance-based
   coverage loss vs. cone-angle) turned out to have different, non-obvious

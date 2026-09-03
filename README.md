@@ -1,7 +1,7 @@
 # TriformFacet
 
 <p align="center">
-  <img src="icon.png" alt="TriformFacet icon: one floating object casting a rectangle, a circle, and a triangle onto the corner of a room" width="360">
+  <img src="renders/icon.png" alt="TriformFacet icon: one floating object casting a rectangle, a circle, and a triangle onto the corner of a room" width="360">
 </p>
 
 A small Python/PyVista renderer that reproduces a remembered scene: the corner
@@ -144,13 +144,27 @@ circle/rectangle/triangle case.
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install pyvista
-.venv/bin/python render_scene.py               # writes scene.png — full illustration
-.venv/bin/python render_icon.py                # writes icon.png — square icon crop
-.venv/bin/python render_icon_highres.py        # writes highres_icon.png — same icon, 8192px
+.venv/bin/python src/render_scene.py               # writes renders/scene.png — full illustration
+.venv/bin/python src/render_icon.py                # writes renders/icon.png — square icon crop
+.venv/bin/python src/render_icon_highres.py        # writes renders/highres_icon.png — same icon, 8192px
 ```
 
-Rendering is fully headless/off-screen (VTK's software path) — no display or
-Xvfb needed on this machine.
+Every script resolves `renders/` relative to its own file location (not the
+cwd it's run from), so they can be invoked from anywhere and always land in
+`<repo root>/renders/` (ADR 0028). Rendering is fully headless/off-screen
+(VTK's software path) — no display or Xvfb needed on this machine.
+
+## Repo layout
+
+- `src/` — all `render_*.py` scripts. Flat, no package/`__init__.py` (ADR
+  0003's single-static-illustration scope doesn't need one); they import
+  each other directly by module name, which works because they're always
+  invoked as `python src/<file>.py` (Python puts the script's own directory
+  on `sys.path[0]`).
+- `renders/` — every generated PNG (`scene.png`, `icon.png`,
+  `highres_icon.png`). Nothing here is hand-edited; delete and re-run the
+  scripts above to regenerate.
+- `docs/adr/` — the ADR log (see below).
 
 ## Icon
 
@@ -196,7 +210,7 @@ either way (verified byte-identical output with and without the "true
 vector" flag); this scene's shadow-mapped shading has no vector
 representation to export in the first place.
 
-## Key parameters (`render_scene.py`)
+## Key parameters (`src/render_scene.py`)
 
 | Name | Meaning |
 | --- | --- |

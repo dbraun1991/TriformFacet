@@ -26,8 +26,17 @@ becomes a triangle, since the taper is linear. One object, three different
 "true" shadow shapes depending on which side you observe it from.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pyvista as pv
+
+# Every render script writes into ../renders/ relative to this file (i.e.
+# <repo root>/renders/), regardless of the cwd it's invoked from — resolved
+# from __file__ rather than assumed cwd == repo root. Defined once here and
+# imported by the other render_*.py siblings so they can't drift onto
+# different output locations.
+RENDERS_DIR = Path(__file__).resolve().parent.parent / "renders"
 
 ROOM = 28.0    # room extends 0..ROOM along x and y — doubled again per
 HEIGHT = 24.0  # ADR 0021 (first doubled per ADR 0017). Both linear
@@ -321,5 +330,7 @@ if __name__ == "__main__":
     plotter.camera.up = (0, 0, 1)
     plotter.camera.view_angle = 32
 
-    plotter.screenshot("scene.png")
-    print("wrote scene.png")
+    RENDERS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = RENDERS_DIR / "scene.png"
+    plotter.screenshot(str(out_path))
+    print(f"wrote {out_path}")
