@@ -65,21 +65,6 @@ crease gets distinct per-face normals by construction:
    `(-slope, 0, 1)`.
 4. **Bottom cut strip** (`z = -zBound(x)`): flat outward normal ∝
    `(-slope, 0, -1)`.
-
-A first pass copied `render_scene.py`'s own `n_upper`/`n_lower` vectors
-verbatim (`(slope, 0, -1)` / `(slope, 0, 1)`) on the assumption they were
-the cut faces' outward normals. They aren't: those are
-`vtkClipClosedSurface` *clip-plane* normals, which point at the material
-being cut away — the opposite convention from a resulting face's outward
-surface normal. The bug was invisible in isolation (lighting direction
-still looked plausible from most angles) but read as a flat, unlit,
-"see-through"-looking taper once viewed closely in the live orbit viewer,
-since the two cut strips make up most of the tapered half's visible
-surface. Fixed by deriving the outward normal directly from each face's
-own plane equation instead of reusing the Python source's vector: the top
-face bounds kept material (`z ≤ zBound(x)`) from above, so outward — away
-from the solid — is the gradient of `f(x,z) = z - zBound(x)`, i.e.
-`(-slope, 0, 1)`; the bottom face mirrors to `(-slope, 0, -1)`.
 5. **End cap** (triangle fan) at the full-circle end — reuses the two arc
    strips' own last-row vertices rather than generating fresh ones at that
    boundary, so the seam has no gap from mismatched tessellation density.
@@ -89,20 +74,68 @@ split_vertices=True, ...)` fix (ADR 0006's own shading-bug fix for the
 same curved/flat crease) — arrived at for free by construction, rather
 than as a merge-then-split correction step.
 
-Triangle winding is **not** guaranteed consistently outward across all
-five patches (the two lateral arc strips are parameterized in opposite
-rotational senses around the cylinder). Rather than hand-verify winding
-per patch, the geometry is rendered with `side: THREE.DoubleSide`
-(`web/src/scene/room.js`) — a pragmatic simplification also applied to the
-room quads themselves, whose fixed corner winding likewise doesn't face
-the establishing-shot camera consistently across all three planes (an
-early-testing bug: one wall was silently backface-culled and missing
-entirely until this fix).
+### Two normal/winding bugs found via the live viewer, not by inspection
+
+Both were invisible from casual review of the math and only showed up as
+wrong shading once actually orbited close in the browser — the same
+"render and look, don't just diff" discipline `AGENTS.md` already asks of
+the Python side.
+
+**Cut-face normal sign.** A first pass copied `render_scene.py`'s own
+`n_upper`/`n_lower` vectors verbatim (`(slope, 0, -1)` / `(slope, 0, 1)`)
+on the assumption they were the cut faces' outward normals. They aren't:
+those are `vtkClipClosedSurface` *clip-plane* normals, which point at the
+material being cut away — the opposite convention from a resulting face's
+outward surface normal. Fixed by deriving the outward normal directly
+from each face's own plane equation instead: the top face bounds kept
+material (`z ≤ zBound(x)`) from above, so outward — away from the solid —
+is the gradient of `f(x,z) = z - zBound(x)`, i.e. `(-slope, 0, 1)`; the
+bottom face mirrors to `(-slope, 0, -1)` (both given above).
+
+**Inverted triangle winding on the arc and cut strips — the bigger one.**
+Even after the sign fix, the taper still showed no blue (from `wallBack`)
+or amber (from `floor`) on most of its visible surface — only a thin
+sliver, easy to mistake for "just needs more light." Cross-product
+analysis of `addQuad()`'s original vertex order (`a,b,c` / `a,c,d`) showed
+every arc and cut-strip quad's winding-derived normal was the *negative*
+of its assigned explicit normal. Combined with `side: THREE.DoubleSide`
+(`room.js`), this triggers three.js's standard shader chunk's back-face
+normal auto-flip (`normal *= faceDirection`) for exactly the
+outward-facing view that matters — silently negating an
+already-analytically-correct custom normal back to wrong. `DoubleSide`
+alone doesn't excuse getting winding right: it only removes *culling* as
+a way to notice a mistake, while introducing this *auto-flip* as a new
+way for the wrong winding to actively corrupt shading instead of just
+hiding a face. The end cap fan (built directly with `indices.push()`, not
+through `addQuad()`) happened to wind correctly from the start, matching
+its own working, never-suspect round-end appearance — which is what made
+this bug easy to miss initially (only *half* the geometry was affected).
+
+Diagnosed by forcing `flatShading: true` on the live material (which
+recomputes normals from screen-space position derivatives, ignoring the
+stored attribute entirely) and comparing: flat-shaded was correct, smooth
+(using the stored, per-vertex-verified-correct attribute) was wrong — the
+data was right, so the fault had to be in which side the shader treated
+that data as belonging to. Confirmed by cross-product before fixing.
+Fixed by reversing `addQuad()`'s triangle order (`a,c,b` / `a,d,c`); no
+change needed to any of the explicit normal formulas above, which were
+already correct.
 
 Verified the same way ADR 0006 did: camera aimed down each cardinal axis
 in the browser (`-x` end-on, `-z` top-down, `-y` side-on) confirmed a
 clean circle, rectangle, and triangle respectively before trusting the
-geometry in the oblique establishing-shot view.
+geometry in the oblique establishing-shot view — and, after the winding
+fix, a direct pixel-level comparison against `renders/scene.png` at the
+same crop confirmed the taper's three-color gradient (amber top, blue
+underside, rose near the round end) now matches.
+
+`side: THREE.DoubleSide` (`web/src/scene/room.js`) is still used —
+necessary for the room quads (see Consequences), and kept here too as a
+safety net against any *remaining* visibility gaps from viewing angles
+not yet tested — but it is not, and was never, a substitute for correct
+winding: getting winding wrong doesn't just risk a culled/invisible face,
+it risks this exact silent normal-corruption bug on a face that stays
+fully visible.
 
 ## Consequences
 
@@ -117,7 +150,9 @@ geometry in the oblique establishing-shot view.
   circle/rectangle/triangle wedge case — generalizing to a different
   target-shape combination would need re-deriving the cross-section math,
   not just tweaking parameters.
-- `DoubleSide` rendering trades a small, negligible-at-this-mesh-size GPU
-  cost for not having to hand-verify winding per patch — acceptable given
-  the object's small triangle count, but worth revisiting if this
-  construction is ever reused for a much larger mesh.
+- Winding still had to be got right per patch despite `DoubleSide` — see
+  the inverted-winding bug above. Any future hand-authored patch added to
+  this geometry should have its winding checked against its normal via
+  the same cross-product method (or the `flatShading`-vs-smooth
+  comparison trick) before trusting it, not assumed safe because
+  `DoubleSide` is on.
