@@ -6,6 +6,7 @@ import { buildRoomAndObject } from "./scene/room.js";
 import { applySceneCamera } from "./scene/camera.js";
 import { SCENE_CAMERA_FOCAL_POINT } from "./scene/constants.js";
 import { DEFAULT_PALETTE } from "./scene/palettes.js";
+import { createStyleManager } from "./styles/styleManager.js";
 
 const container = document.getElementById("app");
 
@@ -27,6 +28,13 @@ controls.update();
 const meshes = buildRoomAndObject(scene);
 const lights = addFittedLights(scene, renderer);
 const edgeLines = addEdgeHighlightLines(scene, renderer);
+
+// Style switcher UI lands in a later commit — the manager itself is wired
+// up now so each style can be verified as it's added.
+const styleManager = createStyleManager(scene, renderer, { meshes, lights, edgeLines });
+if (import.meta.env.DEV) {
+  window.styleManager = styleManager; // console: styleManager.applyStyle("blueprint")
+}
 
 // Objects whose material tracks the viewport's pixel size (Line2/LineMaterial)
 // need their `resolution` updated on resize — collected here so the resize

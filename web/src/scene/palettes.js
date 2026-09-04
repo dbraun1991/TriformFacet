@@ -52,3 +52,13 @@ export const CELSHADE_CYLINDER_RESOLUTION = 14;
 export const CELSHADE_LINE_COLOR = "#141414";
 
 export const DEFAULT_CYLINDER_RESOLUTION = 96;
+
+// Scene-wide AmbientLight intensity standing in for VTK's per-material
+// ambient coefficient (see lights.js) — kept per-style since blueprint's
+// deep-navy palette needs a bit more of it to stay readable against its
+// near-black unlit background (render_scene_blueprint.py's own
+// BLUEPRINT_SURFACE_SHADING raises ambient/diffuse for the same reason,
+// though three.js's Phong material has no per-material ambient knob to
+// mirror that with directly — this is the scene-wide analog).
+export const DEFAULT_AMBIENT_INTENSITY = 0.18;
+export const BLUEPRINT_AMBIENT_INTENSITY = 0.4;

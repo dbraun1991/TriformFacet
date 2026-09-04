@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CYL_CENTER, HEIGHT, LIGHT_PADDING, ROOM } from "./constants.js";
-import { DEFAULT_LIGHT_COLORS } from "./palettes.js";
+import { DEFAULT_AMBIENT_INTENSITY, DEFAULT_LIGHT_COLORS } from "./palettes.js";
 
 /**
  * Half-angle (DEGREES — matches render_scene.py's return convention;
@@ -74,7 +74,7 @@ export function addFittedLights(scene, renderer, colors = DEFAULT_LIGHT_COLORS) 
   // Small ambient term standing in for VTK's per-material ambient
   // coefficient (see palettes.js) — otherwise unlit areas go fully black,
   // unlike the Python renderer's per-material ambient=0.12.
-  const ambient = new THREE.AmbientLight(0xffffff, 0.18);
+  const ambient = new THREE.AmbientLight(0xffffff, DEFAULT_AMBIENT_INTENSITY);
   scene.add(ambient);
 
   return { floor, wallBack, wallSide, ambient };

@@ -19,6 +19,31 @@ function buildQuad(p0, p1, p2, p3) {
 }
 
 /**
+ * The floating wedge-cylinder mesh alone, positioned at CYL_CENTER —
+ * factored out of buildRoomAndObject() so styles/styleManager.js can build
+ * a second, differently-tessellated instance for the cel-shade style
+ * (genuinely different geometry, not just a material swap — see that
+ * module). `resolution` is stashed on `userData` so the style manager can
+ * tell the two instances apart without comparing geometry objects.
+ */
+export function buildCylinderMesh(resolution, color, objectShading) {
+  const cylinder = new THREE.Mesh(
+    buildWedgeCylinderGeometry(CYL_RADIUS, CYL_LENGTH, resolution),
+    new THREE.MeshPhongMaterial({
+      color,
+      side: THREE.DoubleSide, // see wedgeCylinder.js — winding isn't guaranteed outward everywhere
+      flatShading: resolution < DEFAULT_CYLINDER_RESOLUTION,
+      ...objectShading,
+    }),
+  );
+  cylinder.position.set(...CYL_CENTER);
+  cylinder.castShadow = true;
+  cylinder.receiveShadow = true;
+  cylinder.userData.resolution = resolution;
+  return cylinder;
+}
+
+/**
  * Adds the room (floor + two walls) and the floating wedge cylinder to
  * `scene` — everything except lighting, mirroring
  * render_scene.py's build_room_and_object(). Returns the four meshes so a
@@ -58,18 +83,7 @@ export function buildRoomAndObject(
     scene.add(mesh);
   }
 
-  const cylinder = new THREE.Mesh(
-    buildWedgeCylinderGeometry(CYL_RADIUS, CYL_LENGTH, cylinderResolution),
-    new THREE.MeshPhongMaterial({
-      color: palette.object,
-      side: THREE.DoubleSide, // see wedgeCylinder.js — winding isn't guaranteed outward everywhere
-      flatShading: cylinderResolution < DEFAULT_CYLINDER_RESOLUTION,
-      ...objectShading,
-    }),
-  );
-  cylinder.position.set(...CYL_CENTER);
-  cylinder.castShadow = true;
-  cylinder.receiveShadow = true;
+  const cylinder = buildCylinderMesh(cylinderResolution, palette.object, objectShading);
   scene.add(cylinder);
 
   return { floor, wallBack, wallSide, cylinder };
