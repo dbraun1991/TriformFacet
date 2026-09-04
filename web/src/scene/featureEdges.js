@@ -36,11 +36,15 @@ export function addFeatureEdges(
   const geometry = new LineSegmentsGeometry();
   geometry.setPositions(points);
 
-  const material = new LineMaterial({ color, linewidth: lineWidth, depthTest: true });
+  // depthTest off — same always-on-top overlay treatment as edgeLines.js,
+  // for the same reason (boundary edges are coincident with the meshes
+  // they outline).
+  const material = new LineMaterial({ color, linewidth: lineWidth, depthTest: false });
   const size = renderer.getSize(new THREE.Vector2());
   material.resolution.set(size.x, size.y);
 
   const lines = new LineSegments2(geometry, material);
+  lines.renderOrder = 999;
   scene.add(lines);
   return lines;
 }

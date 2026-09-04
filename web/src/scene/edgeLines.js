@@ -25,12 +25,19 @@ export function addEdgeHighlightLines(scene, renderer, color = "#ffffff", lineWi
   const material = new LineMaterial({
     color,
     linewidth: lineWidth, // pixels
-    depthTest: true,
+    // depthTest off: these edges are coincident with the room quads'
+    // shared seams, which z-fights (visibly dashes/flickers) at any
+    // depth-buffer precision. Matches the Python side's own framing of
+    // this as a deliberate always-on-top cheat, not physically-depth-
+    // tested geometry (render_scene.py's add_edge_highlight_lines
+    // docstring).
+    depthTest: false,
   });
   const size = renderer.getSize(new THREE.Vector2());
   material.resolution.set(size.x, size.y);
 
   const lines = new LineSegments2(geometry, material);
+  lines.renderOrder = 999;
   scene.add(lines);
   return lines;
 }

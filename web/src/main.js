@@ -48,3 +48,10 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+
+if (import.meta.env.DEV) {
+  const { ambient, ...spotLights } = lights;
+  import("./ui/debugPanel.js").then(({ mountDebugPanel }) =>
+    mountDebugPanel({ ambient, lights: spotLights }),
+  );
+}

@@ -74,7 +74,7 @@ export function addFittedLights(scene, renderer, colors = DEFAULT_LIGHT_COLORS) 
   // Small ambient term standing in for VTK's per-material ambient
   // coefficient (see palettes.js) — otherwise unlit areas go fully black,
   // unlike the Python renderer's per-material ambient=0.12.
-  const ambient = new THREE.AmbientLight(0xffffff, 1.6);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.18);
   scene.add(ambient);
 
   return { floor, wallBack, wallSide, ambient };
