@@ -67,6 +67,27 @@ not baked shadow textures.
   `SCENE_CAMERA_POSITION`, etc.) stays copy-pasteable verbatim rather than
   needing an axis remap at every use site, trading three.js idiom for
   transcription safety against the Python source of truth.
+- **Wedge cylinder gets a flat, per-material emissive tint** (a scaled
+  average of the three active light colors, applied in
+  `styleManager.applyStyle()`, not a scene light) **instead of an
+  object-only fill light.** `render_scene.py`'s own object-color comment
+  says the near-white material is chosen "so it visibly reflects each
+  surface's light color" — true in the Python renders (verified by pixel-
+  sampling `renders/scene.png`: bright, tri-color values across the whole
+  tapered surface, not just near the round end), but not reproduced by the
+  three spotlights alone in three.js: their pure Lambertian diffuse falls
+  to ~0 at grazing incidence regardless of intensity (confirmed live — a
+  4x intensity bump changed the fully-lit room surfaces dramatically and
+  left the object's shadowed half unchanged), so most of the curved/
+  tapered surface read as flat black instead. The first attempt used
+  three.js `Layers` to add extra colored `AmbientLight`s restricted to the
+  cylinder only — this does not work the way it sounds: light/object layer
+  matching in three.js's forward renderer only gates a light against the
+  *camera's* layers (whether the light is used in the render at all), not
+  against which objects it illuminates once active, confirmed by testing
+  it live (enabling the camera's layer washed the whole room, not just the
+  object). Emissive is a genuinely per-material property with no such
+  caveat, and needed no new light/layer plumbing.
 
 ## Consequences
 

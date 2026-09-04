@@ -333,6 +333,16 @@ Deliberate simplifications, not defects:
   ratio, but VTK's 5x-vs-10x shadow-coverage cliff (see Known issues above)
   is a VTK-specific artifact — three.js's shadow mapper was tuned against
   this same distance from scratch, not assumed to share that limitation.
+- **Wedge cylinder's "reflects each light's color" read is approximated
+  with a flat per-material emissive tint**, not purely the three spotlights
+  as in the Python version — three.js's Lambertian diffuse alone falls to
+  ~0 at grazing incidence (confirmed: a 4x light-intensity bump left the
+  object's shadowed half unchanged), so most of the curved/tapered surface
+  would otherwise read as flat black instead of picking up all three
+  colors the way `renders/scene.png` actually shows. See ADR 0033's
+  Decision section for what was tried (an object-only fill light via
+  three.js `Layers`) and why it doesn't work that way in three.js's
+  renderer.
 
 ## Key parameters (`src/render_scene.py`)
 
