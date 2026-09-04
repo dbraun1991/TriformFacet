@@ -1,6 +1,7 @@
 # Architecture Decision Records
 
-Numbered, chronological record of the decisions behind `render_scene.py`.
+Numbered, chronological record of the decisions behind `render_scene.py`
+and (from 0033) the `web/` three.js viewer.
 Format: Context / Decision / Consequences. Status is "Accepted" unless noted.
 
 | # | Title |
@@ -37,3 +38,5 @@ Format: Context / Decision / Consequences. Status is "Accepted" unless noted.
 | [0030](0030-celshade-style-variant.md) | Cel/toon-shading style variant (`scene_celshade.png`): low-poly flat-shaded object, black ink outline |
 | [0031](0031-handdrawn-style-variant.md) | Hand-drawn/sketchbook style variant (`scene_handdrawn.png`): seeded sine-wobble line geometry for the room's corner edges |
 | [0032](0032-style-variant-icons-and-regular-prefix.md) | Icon crops (regular + highres) for all three style variants; `icon.png`/`grayscale_icon.png` renamed with an explicit `regular_` prefix |
+| [0033](0033-threejs-interactive-viewer.md) | three.js interactive viewer (`web/`), deployed via GitHub Pages/Actions |
+| [0034](0034-wedge-cylinder-threejs.md) | Wedge cylinder re-derived as a hand-built three.js geometry, not a CSG clip |

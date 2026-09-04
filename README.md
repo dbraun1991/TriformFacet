@@ -183,6 +183,8 @@ cwd it's run from), so they can be invoked from anywhere and always land in
   `regular_handdrawn_icon.png`, `highres_handdrawn_icon.png`. Nothing here
   is hand-edited; delete and re-run the scripts above to regenerate.
 - `docs/adr/` — the ADR log (see below).
+- `web/` — the three.js interactive viewer (see "Live viewer" below), a
+  separate Node/Vite toolchain unrelated to the Python layout above.
 
 ## Icon
 
@@ -282,6 +284,51 @@ that camera was actually fit to, is identical across every style variant
 (ADR 0032). Verified, not assumed: each was pixel-scanned for its own
 background color and found zero matching pixels, same containment
 guarantee as the default icon.
+
+## Live viewer
+
+**[dbraun1991.github.io/TriformFacet](https://dbraun1991.github.io/TriformFacet/)**
+— a three.js re-derivation of the scene, deployed via GitHub Pages, for
+interactive in-browser viewing. Orbit the camera (drag to rotate, scroll to
+zoom/pan) and switch between four live styles — default, blueprint,
+cel-shade, grayscale — with no page reload.
+
+This is a genuine re-derivation, not a code port: three.js is not a
+PyVista/VTK target, so the room/object geometry, the fitted-cone spotlight
+rig, and the shadow mapping were all rebuilt from scratch to match the
+existing renders rather than translated line-by-line. See ADR 0033/0034 for
+how, including the wedge cylinder's chord-cut cross-section derivation
+(built as a hand-authored `BufferGeometry`, not a CSG library).
+
+Source lives in `web/` (`cd web && npm install && npm run dev` for local
+development) — a separate Node/Vite toolchain, untouched by and unrelated
+to `src/`/`renders/` above. The Python pipeline remains the source of truth
+for every static render; the viewer is purely additive.
+
+### Differences from the Python renderer
+
+Deliberate simplifications, not defects:
+
+- **Shadow fidelity/AA** differs from VTK's fixed software-rasterized SSAA
+  baseline — browser WebGL anti-aliasing quality varies by GPU/driver. The
+  three.js shadow maps are tuned to 2048px (real-time, `PCFShadowMap`),
+  which in practice reads sharper than the Python side's own documented
+  "somewhat pixelated/jagged" shadow-edge limitation (see Known issues
+  above), since VTK doesn't expose a way to raise that resolution.
+- **Hand-drawn/sketchbook style is not ported** — see AGENTS.md → Features
+  & Future Work.
+- **Orbit + style switcher only** — no parametric sliders (room/object/
+  light controls) in this pass.
+- **Scene is authored and rendered z-up** (`camera.up = (0,0,1)`), a
+  deliberate deviation from three.js's y-up default, so every ported
+  constant (`ROOM`, `CYL_CENTER`, `SCENE_CAMERA_POSITION`, etc.) stays
+  copy-pasteable straight from `src/render_scene.py` rather than needing an
+  axis remap.
+- **Light-throw distance re-validated independently**: `FAR = 5 * ROOM`
+  (the near-parallel spotlight pull-back) matches render_scene.py's own
+  ratio, but VTK's 5x-vs-10x shadow-coverage cliff (see Known issues above)
+  is a VTK-specific artifact — three.js's shadow mapper was tuned against
+  this same distance from scratch, not assumed to share that limitation.
 
 ## Key parameters (`src/render_scene.py`)
 
