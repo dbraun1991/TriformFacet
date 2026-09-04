@@ -4,6 +4,10 @@
   <img src="renders/regular_icon.png" alt="TriformFacet icon: one floating object casting a rectangle, a circle, and a triangle onto the corner of a room" width="360">
 </p>
 
+<p align="center">
+  <a href="https://dbraun1991.github.io/TriformFacet/"><strong>Live preview</strong></a> — orbit the scene and switch styles in your browser
+</p>
+
 A small Python/PyVista renderer that reproduces a remembered scene: the corner
 of a room — a floor and two walls, doubling as an unscaled 3D coordinate
 frame — with an object floating in the air above the floor, lit by three
