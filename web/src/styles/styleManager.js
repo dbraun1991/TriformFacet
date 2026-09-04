@@ -78,5 +78,11 @@ export function createStyleManager(scene, renderer, { meshes, lights, edgeLines 
 
   applyStyle(DEFAULT_STYLE_NAME);
 
-  return { applyStyle, getCurrentStyle: () => current };
+  return {
+    applyStyle,
+    getCurrentStyle: () => current,
+    // Line2/LineMaterial track the viewport's pixel size — exposed so the
+    // caller's resize handler can keep them in sync (see main.js).
+    lineMaterials: [fullEdges.material, cylinderOnlyEdges.material],
+  };
 }
