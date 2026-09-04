@@ -21,8 +21,8 @@ import * as THREE from "three";
  * seam:
  *   1. right lateral arc strip (y ≈ +radius)
  *   2. left lateral arc strip (y ≈ -radius)
- *   3. top cut strip (z = +zBound(x)), flat normal = n_upper
- *   4. bottom cut strip (z = -zBound(x)), flat normal = n_lower
+ *   3. top cut strip (z = +zBound(x)), flat outward normal ∝ (-slope, 0, 1)
+ *   4. bottom cut strip (z = -zBound(x)), flat outward normal ∝ (-slope, 0, -1)
  *   5. end cap (triangle fan) at the full-circle end, reusing the arc
  *      strips' own rim vertices so the seam has no gap
  *
@@ -85,9 +85,18 @@ export function buildWedgeCylinderGeometry(radius, length, resolution = 96) {
   const leftGrid = buildArcStrip(Math.PI);
 
   // --- cut strips: flat quads at z = sign*zBound(x), spanning
-  // y in [-w(x), +w(x)] where w(x) = radius*cos(thetaMax(x)) — the same
-  // analytic cut-plane normal render_scene.py uses (n_upper/n_lower),
-  // not a computed one. ---
+  // y in [-w(x), +w(x)] where w(x) = radius*cos(thetaMax(x)). Outward
+  // normal derived directly from the face's own plane equation (kept
+  // material is z <= zBound(x) for the top face, so outward — away from
+  // the solid — is the gradient of f(x,z) = z - zBound(x), i.e.
+  // (-slope, 0, 1); mirrored for the bottom face). NOT the same sign as
+  // render_scene.py's own n_upper/n_lower: those are vtkClipClosedSurface
+  // *clip-plane* normals (pointing at the material being cut away), which
+  // is the opposite convention from a resulting face's outward surface
+  // normal — copying them verbatim here produced inward-facing normals and
+  // visibly wrong (near-black, "see-through"-looking) shading on the
+  // tapered half of the object until caught by eye against the live
+  // viewer. ---
   function buildCutStrip(sign, normal) {
     const grid = [];
     for (let i = 0; i <= lengthSegments; i++) {
@@ -107,8 +116,8 @@ export function buildWedgeCylinderGeometry(radius, length, resolution = 96) {
   }
 
   const slope = radius / length;
-  buildCutStrip(1, new THREE.Vector3(slope, 0, -1).normalize()); // n_upper
-  buildCutStrip(-1, new THREE.Vector3(slope, 0, 1).normalize()); // n_lower
+  buildCutStrip(1, new THREE.Vector3(-slope, 0, 1).normalize()); // top face outward normal
+  buildCutStrip(-1, new THREE.Vector3(-slope, 0, -1).normalize()); // bottom face outward normal
 
   // --- end cap: triangle fan at x = xFull, reusing the arc strips' own
   // last-row vertices (not fresh ones) so the rim has no seam gap. Right

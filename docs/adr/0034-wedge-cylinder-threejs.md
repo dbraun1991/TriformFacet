@@ -61,9 +61,25 @@ crease gets distinct per-face normals by construction:
    per `x`, radial outward normals.
 2. **Left lateral arc strip** (`y ≈ -radius`): mirrored, `θ` centered on
    `π`.
-3. **Top cut strip** (`z = +zBound(x)`): flat normal = `n_upper` (the same
-   analytic normal `render_scene.py` computes, not a recomputed one).
-4. **Bottom cut strip** (`z = -zBound(x)`): flat normal = `n_lower`.
+3. **Top cut strip** (`z = +zBound(x)`): flat outward normal ∝
+   `(-slope, 0, 1)`.
+4. **Bottom cut strip** (`z = -zBound(x)`): flat outward normal ∝
+   `(-slope, 0, -1)`.
+
+A first pass copied `render_scene.py`'s own `n_upper`/`n_lower` vectors
+verbatim (`(slope, 0, -1)` / `(slope, 0, 1)`) on the assumption they were
+the cut faces' outward normals. They aren't: those are
+`vtkClipClosedSurface` *clip-plane* normals, which point at the material
+being cut away — the opposite convention from a resulting face's outward
+surface normal. The bug was invisible in isolation (lighting direction
+still looked plausible from most angles) but read as a flat, unlit,
+"see-through"-looking taper once viewed closely in the live orbit viewer,
+since the two cut strips make up most of the tapered half's visible
+surface. Fixed by deriving the outward normal directly from each face's
+own plane equation instead of reusing the Python source's vector: the top
+face bounds kept material (`z ≤ zBound(x)`) from above, so outward — away
+from the solid — is the gradient of `f(x,z) = z - zBound(x)`, i.e.
+`(-slope, 0, 1)`; the bottom face mirrors to `(-slope, 0, -1)`.
 5. **End cap** (triangle fan) at the full-circle end — reuses the two arc
    strips' own last-row vertices rather than generating fresh ones at that
    boundary, so the seam has no gap from mismatched tessellation density.
