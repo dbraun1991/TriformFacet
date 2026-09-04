@@ -52,8 +52,19 @@ export function buildWedgeCylinderGeometry(radius, length, resolution = 96) {
     return positions.length / 3 - 1;
   }
 
+  // Winding reversed (a,c,b / a,d,c, not a,b,c / a,c,d) so the arc and cut
+  // strips built with this helper are front-facing (CCW) as seen from
+  // outside the solid, matching their explicit outward normals above. Get
+  // this backwards and three.js's DoubleSide back-face auto-flip
+  // (`normal *= faceDirection` in the standard shader chunk) silently
+  // negates an already-correct custom normal back to wrong for exactly
+  // the outward view that matters — confirmed by cross-product analysis
+  // of the un-reversed winding, and by comparing smooth shading (uses
+  // this normal, was wrong) against flatShading (recomputes from screen-
+  // space derivatives, was correct) on the live wedge. The end cap fan
+  // below doesn't use this helper and already winds correctly.
   function addQuad(a, b, c, d) {
-    indices.push(a, b, c, a, c, d);
+    indices.push(a, c, b, a, d, c);
   }
 
   // --- lateral arc strips: theta centered on 0 (right, y>0) or PI (left,

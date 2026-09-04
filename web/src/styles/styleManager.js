@@ -5,8 +5,13 @@ import { buildCylinderMesh } from "../scene/room.js";
 import { DEFAULT_STYLE_NAME, STYLES } from "./styles.js";
 
 // Weight of each light's color folded into the cylinder's emissive term —
-// see the comment at its use site below for why this exists at all.
-const OBJECT_FILL_WEIGHT = 0.22;
+// see the comment at its use site below for why this exists at all. Small:
+// the wedgeCylinder.js winding fix (addQuad's reversed triangle order) is
+// what actually makes the object read as reflecting all three light
+// colors now — this is just a minor fill for the small sliver that's
+// still genuinely unlit by design (the bottom cut face's outward -z side,
+// which no light points toward).
+const OBJECT_FILL_WEIGHT = 0.08;
 
 /** Average of the three light colors, scaled by `weight` — a flat,
  * angle-independent self-tint approximating how much of each light's hue
@@ -76,18 +81,20 @@ export function createStyleManager(scene, renderer, { meshes, lights, edgeLines 
     celshadeCylinder.visible = !useDefaultCylinder;
     const activeCylinder = useDefaultCylinder ? defaultCylinder : celshadeCylinder;
     activeCylinder.material.color.set(style.palette.object);
-    // A flat emissive tint, not a directional light: the spotlights' pure
-    // Lambertian diffuse falls to ~0 at grazing incidence regardless of
-    // intensity (verified — a 4x intensity bump left the taper's shadowed
-    // half unchanged), so most of the curved/tapered surface reads as flat
-    // black instead of "reflecting each surface's light color" the way
-    // render_scene.py's own object-color comment describes and the
-    // reference renders actually show. Three.js's Layers can't restrict a
-    // light to one mesh (light/object layer matching only gates against
-    // the camera's layers, not per-receiving-object — confirmed by testing
-    // it live: enabling it washed the whole room, not just the object), so
-    // this approximates VTK's per-material ambient response with a
-    // straightforward per-material property instead.
+    // Small flat emissive fill for the one sliver that's genuinely unlit
+    // by design (the bottom cut face's outward -z side — no light points
+    // that way). The real "reflects each light's color" behavior comes
+    // from correct geometry (wedgeCylinder.js's addQuad winding fix), not
+    // from this — earlier investigation wrongly attributed the taper
+    // reading as flat black to Lambertian grazing-incidence falloff and
+    // added this at a much higher weight before the actual bug (inverted
+    // triangle winding triggering three.js's DoubleSide back-face normal
+    // auto-flip, silently negating otherwise-correct custom normals) was
+    // found; see ADR 0033/0034 for the full story. Also tried, and
+    // doesn't work: three.js Layers to restrict a fill light to one mesh
+    // — light/object layer matching only gates against the camera's
+    // layers, not per-receiving-object (confirmed live: enabling it
+    // washed the whole room, not just the object).
     activeCylinder.material.emissive.copy(blendLightColors(style.lightColors, OBJECT_FILL_WEIGHT));
 
     lights.floor.color.set(style.lightColors.floor);
